@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<meta charset="ISO-8859-1">
+<style type="text/css">
+#box-1 { 
+	margin:auto; 
+	text-align:left; 
+	background-color:#F90;
+	width:300px; 
+	height:150px; 
+	padding:15px;
+	border-radius: 20px; 
+	-moz-border-radius:20px;
+}
+</style>
+
+  <script type="text/javascript"></script>
+  <script src="/JS/d3.v3.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="colorbrewer.css"/>   
+  <link type="text/css" rel="stylesheet" href="Main.css"/>    
+<body>
+	<h1>Carte de le population</h1>
+<script>
+ 
+var width = 1200,
+    height = 600;
+    
+var projection = d3.geo.mercator()
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+ 
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", "YlOrRd");
+    
+var tooltip = d3.select("body")
+  .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0); 
+    tooltip.append("div")
+    .attr("class", "state-title");
+    tooltip.append("div")
+    .attr("class", "state-Data");
+    
+svg.append("rect")
+    .attr("class", "background")
+    .attr("stroke","#000")
+    .attr("width", width)
+    .attr("height", height)
+    //.on("click", click);
+ 
+var g = svg.append("g")
+    .attr("id", "Communes");                                                                                                                                 
+         
+d3.json("Data/Population/Pop16.json", function(data) { 
+	var quantize = d3.scale.quantile()
+											.domain([d3.min(d3.values(data)), d3.max(d3.values(data))])
+											.range(d3.range(9));                                                                                                                   
+  d3.json("data/maps/WC16.json", function(json) {
+      projection
+        .scale(1)
+        .translate([0, 0]);
+  
+    var b = path.bounds(json),
+        s = .99 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+        t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+  
+    projection.scale(s).translate(t);
+    
+       g.selectAll("path")
+       .data(json.features)
+       .enter().append("path")
+        .attr("class", function(j) { 
+        	   console.log("data: " + quantize(data[j.id])); 
+        	   return "q" + quantize(data[j.id]) + "-9"; })
+        //.attr("id", function(d) {return d.properties.id;})
+        //.attr("text", function(d) { return d.properties.id; })
+        .attr("d", path)
+        
+        .on("mouseenter", function(d) {
+        	    tooltip.transition()
+        	      .duration(100)
+        	      .style("opacity", 1);
+        	    tooltip.select('.state-title')
+        	    
+        	      .text("Commune: " +d.properties.name )
+        	    tooltip.select('.state-Data')
+        	        .text( function(d1) { console.log(d.id); return "Population: " + data[d.id] ; })
+        	  })
+        .on("mousemove" , function(d) {
+        	    tooltip.style("left", (d3.event.pageX+5) + "px")
+        	      		 .style("top" , (d3.event.pageY+5) + "px");
+        	  })
+        .on("mouseleave", function(d) {
+        	    tooltip.transition()
+        	      .duration(100)
+        	      .style("opacity", 0);
+        	  })
+        .on("mouseover" , function(d){d3.select(this).style("opacity", 0.8  ); })
+        .on("mouseout"  , function(d){d3.select(this).style("opacity", 1  ); })                                                                      
+    });                                                                                                                                                            
+});   
+
+var gd = svg.append("g")
+    .attr("id", "Dairas");
+  d3.json("data/maps/W16D.geojson", function(json) {
+      projection
+        .scale(1)
+        .translate([0, 0]);
+    var b = path.bounds(json),
+        s = .99 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+        t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+    projection.scale(s).translate(t);
+       gd.selectAll("path")
+         .data(json.features)
+         .enter().append("path")
+         .attr("d", path)
+         .style("stroke", function() { return "black" }) 
+         .style("fill", function() { return "none" })
+         .style("stroke-width", function() { return 2 }) 
+    });    
+</script>
+<body>
+
